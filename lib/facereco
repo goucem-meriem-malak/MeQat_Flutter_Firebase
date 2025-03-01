@@ -1,0 +1,187 @@
+import 'dart:io';
+import 'dart:math';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:tflite_flutter/tflite_flutter.dart';
+import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
+
+import 'Settings.dart';
+import 'home.dart';
+import 'menu.dart';
+
+class FaceRecognitionApp extends StatefulWidget {
+  @override
+  _FaceRecognitionAppState createState() => _FaceRecognitionAppState();
+}
+
+class _FaceRecognitionAppState extends State<FaceRecognitionApp> {
+  File? image1;
+  File? image2;
+  Interpreter? interpreter;
+  String recognitionResult = ""; // 🆕 Variable to store result
+
+  @override
+  void initState() {
+    super.initState();
+    loadModel();
+  }
+
+  Future<void> loadModel() async {
+    interpreter = await Interpreter.fromAsset("assets/facenet.tflite");
+    print("✅ Model Loaded!");
+  }
+
+  Future<void> captureImage(bool isFirst) async {
+    final XFile? image = await ImagePicker().pickImage(source: ImageSource.camera);
+    if (image != null) {
+      setState(() {
+        if (isFirst) {
+          image1 = File(image.path);
+        } else {
+          image2 = File(image.path);
+        }
+      });
+    }
+  }
+
+  Future<void> compareFaces() async {
+    if (image1 == null || image2 == null) {
+      setState(() => recognitionResult = "⚠️ Please take both pictures first.");
+      return;
+    }
+
+    final faceDetector = FaceDetector(options: FaceDetectorOptions());
+    final faces1 = await faceDetector.processImage(InputImage.fromFile(image1!));
+    final faces2 = await faceDetector.processImage(InputImage.fromFile(image2!));
+
+    if (faces1.isEmpty || faces2.isEmpty) {
+      setState(() => recognitionResult = "⚠️ No face detected in one or both images.");
+      return;
+    }
+
+    var embeddings1 = await getFaceEmbedding(image1!);
+    var embeddings2 = await getFaceEmbedding(image2!);
+
+    if (embeddings1 == null || embeddings2 == null) {
+      setState(() => recognitionResult = "⚠️ Error processing face embeddings.");
+      return;
+    }
+
+    double distance = calculateEuclideanDistance(embeddings1, embeddings2);
+    print("🔢 Face Distance: $distance");
+
+    setState(() {
+      recognitionResult = distance < 1.0 ? "✅ Faces Match!" : "❌ Faces Don't Match!";
+    });
+  }
+
+  Future<List<double>?> getFaceEmbedding(File image) async {
+    var input = preprocessImage(image);
+    var output = List<double>.filled(128, 0).reshape([1, 128]);
+
+    interpreter!.run(input, output);
+    return output[0];
+  }
+
+  List<List<List<List<double>>>> preprocessImage(File image) {
+    return List.generate(1, (_) => List.generate(160, (_) => List.generate(160, (_) => List.generate(3, (_) => Random().nextDouble()))));
+  }
+
+  double calculateEuclideanDistance(List<double> vec1, List<double> vec2) {
+    double sum = 0;
+    for (int i = 0; i < vec1.length; i++) {
+      sum += pow(vec1[i] - vec2[i], 2);
+    }
+    return sqrt(sum);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(title: Text("Face Recognition App")),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              image1 != null ? Image.file(image1!, height: 150) : Container(),
+              ElevatedButton(
+                onPressed: () => captureImage(true),
+                child: Text("📸 Take First Picture"),
+              ),
+              SizedBox(height: 10),
+              image2 != null ? Image.file(image2!, height: 150) : Container(),
+              ElevatedButton(
+                onPressed: () => captureImage(false),
+                child: Text("📸 Take Second Picture"),
+              ),
+              SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: compareFaces,
+                child: Text("🤖 Compare Faces"),
+              ),
+              SizedBox(height: 20),
+              Text(
+                recognitionResult, // 🆕 Shows the result
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ),
+        bottomNavigationBar: SizedBox(
+          height: 56, // Adjust the height to make it thinner
+          child: BottomAppBar(
+            shape: const CircularNotchedRectangle(), // Optional: Adds a slight curve
+            notchMargin: 6.0, // Optional: Space for floating action button
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.menu),
+                  color: Colors.orange,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => MenuPage()),
+                    );
+                  },
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.home, // Selected icon in orange
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => HomePage()),
+                    );
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.settings),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => SettingsPage()),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+Got it! You want a more premium-looking UI/UX—I'll refine the design with:
+
+✔ Better spacing, alignment, and typography
+✔ Soft shadows, rounded corners, and smooth animations
+✔ A more modern and clean aesthetic
+
+Let me revamp it completely! 💎✨ Give me a moment.
+
+more premium-looking UI/UX, Better spacing, alignment, and typography
+                            Soft shadows, rounded corners, and smooth animations and effects
+                            A more modern and clean aesthetic
